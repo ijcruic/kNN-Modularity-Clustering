@@ -28,9 +28,10 @@ class kNetwork(BaseEstimator, ClusterMixin):
                 for j in nodes[i,:]:
                     edges.append((i,j))
                     
-            network = nx.Graph()
+            network = nx.DiGraph()
             network.add_nodes_from(nodes[:,0])
             network.add_edges_from(edges)
+            network = network.to_undirected(reciprocal=False)
             
             currPart = community.best_partition(network)
             currModularity = community.modularity(currPart, network)

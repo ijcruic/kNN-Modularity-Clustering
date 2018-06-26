@@ -17,7 +17,7 @@ class kNetwork(BaseEstimator, ClusterMixin):
          self.kBest =2
          
     def fit_predict(self, distances):
-         
+        distances = np.copy(distances)
         np.fill_diagonal(distances, np.infty)
     
         for n in range(1, np.int(np.floor(np.log2(distances.shape[0])))):

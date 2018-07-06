@@ -1,5 +1,10 @@
 # k-NN Network Modularity Maximization Clustering
 
+## Overview
+
+## Usage
+
+## Current Issues
 
 ## References
 * Ruan, J.: A fully automated method for discovering community structures in high

@@ -8,6 +8,7 @@ Created on Mon May 14 14:42:17 2018
 import pandas as pd, networkx as nx, kNN_Modularity
 from matplotlib import pyplot as plt
 from sklearn import datasets
+from sklearn.metrics import accuracy_score
 from scipy.spatial.distance import cdist
 
 iris = datasets.load_iris()
@@ -23,10 +24,12 @@ kNetwork = kNN_Modularity.kNetwork()
 subGroupsDF['sub groups'], k, modularity, network = kNetwork.fit_predict(distanceMatrix)
 
 subGroupsDF = subGroupsDF.reindex(network.nodes)
+print("The accuracy of k-NN Modularity Maximization on cluster label is: {}".format(accuracy_score(y, subGroupsDF['sub groups'])))
+
 labels = subGroupsDF['Nodes']
 networkDF = pd.DataFrame(index=labels)
 nx.draw(network, node_color=pd.Categorical(labels).codes, cmap=plt.cm.Set1)
 nx.draw_networkx_labels(network, pos=nx.spring_layout(network), 
                         labels=subGroupsDF['sub groups'].to_dict())
 
-networkDF = nx.to_pandas_adjacency()
+networkDF = nx.to_pandas_adjacency(network)

@@ -5,34 +5,30 @@ Created on Fri May  4 10:33:33 2018
 @author: icruicks
 """
 from sklearn.base import BaseEstimator, ClusterMixin
+from sklearn.neighbors import kneighbors_graph
 import numpy as np, networkx as nx
 import community
 
-class kNetwork(BaseEstimator, ClusterMixin):
+class kNN_network(BaseEstimator, ClusterMixin):
 
-    def __init__(self):
+    def __init__(self, metric='euclidean', symmetrize=True):
          self.bestModularity =-1
          self.bestNetwork = nx.Graph()
          self.bestPart =[]
          self.kBest =2
+         self.metric=metric
+         self.symmetrize=symmetrize
          
-    def fit_predict(self, distances):
-        distances = np.copy(distances)
-        np.fill_diagonal(distances, np.infty)
+    def fit_predict(self, X):
     
-        for n in range(1, np.int(np.floor(np.log2(distances.shape[0])))):
+        for n in range(1, np.int(np.floor(np.log2(X.shape[0])))):
             k = 2**n
-            nodes = np.argpartition(distances, k)[:,:k]
-            edges = []
-            for i in range(nodes.shape[0]):
-                for j in nodes[i,:]:
-                    edges.append((i,j))
-                    
-            network = nx.DiGraph()
-            network.add_nodes_from(nodes[:,0])
-            network.add_edges_from(edges)
-            network = network.to_undirected(reciprocal=False)
-            
+            kNN = kneighbors_graph(X, metric=self.metric, mode='connectivity', n_neighbors=int(k))
+            if self.symmetrize:
+                kNN = kNN.minimum(kNN.T)
+            else:
+                kNN = kNN.maximum(kNN.T)
+            network = nx.from_scipy_sparse_matrix(kNN)
             currPart = community.best_partition(network)
             randomNetwork = self._randomize_network(network)
             currRandomPart = community.best_partition(randomNetwork)
@@ -44,7 +40,7 @@ class kNetwork(BaseEstimator, ClusterMixin):
                 self.bestPart = currPart
                 self.kBest = k
 
-        return np.array([self.bestPart[i] for i in range(nodes.shape[0])]), self.kBest, self.bestModularity, self.bestNetwork
+        return np.array(list(self.bestPart.values()))
     
     def _randomize_network(self, network):
         adj_matrix = nx.to_numpy_matrix(network)

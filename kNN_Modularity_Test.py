@@ -9,27 +9,21 @@ import pandas as pd, networkx as nx, kNN_Modularity
 from matplotlib import pyplot as plt
 from sklearn import datasets
 from sklearn.metrics import accuracy_score
-from scipy.spatial.distance import cdist
 
 iris = datasets.load_iris()
 X = iris.data
 y = iris.target
 
-distanceMatrix = cdist(X, X)
 subGroupsDF = pd.DataFrame({'Nodes':y})
 subGroupsDF.replace(to_replace={0:'Setosa', 1:'Versicolour',
                           2:'Virginica'}, inplace=True)
 
-kNetwork = kNN_Modularity.kNetwork()
-subGroupsDF['sub groups'], k, modularity, network = kNetwork.fit_predict(distanceMatrix)
+kNN = kNN_Modularity.kNN_network(metric='euclidean', symmetrize=False)
+subgroups = kNN.fit_predict(X)
+latent_network = kNN.bestNetwork
 
-subGroupsDF = subGroupsDF.reindex(network.nodes)
-print("The accuracy of k-NN Modularity Maximization on cluster label is: {}".format(accuracy_score(y, subGroupsDF['sub groups'])))
+
+print("The accuracy of k-NN Modularity Maximization on cluster label is: {}".format(accuracy_score(y, subgroups)))
 
 labels = subGroupsDF['Nodes']
-networkDF = pd.DataFrame(index=labels)
-nx.draw(network, node_color=pd.Categorical(labels).codes, cmap=plt.cm.Set1)
-nx.draw_networkx_labels(network, pos=nx.spring_layout(network), 
-                        labels=subGroupsDF['sub groups'].to_dict())
-
-networkDF = nx.to_pandas_adjacency(network)
+nx.draw(latent_network, node_color=subgroups, cmap=plt.cm.Set1, labels=labels)

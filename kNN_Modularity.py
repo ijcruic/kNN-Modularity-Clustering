@@ -11,13 +11,14 @@ from sknetwork.clustering import Louvain, modularity
 
 class kNN_network(BaseEstimator, ClusterMixin):
 
-    def __init__(self, metric='euclidean', graph_type='symmetric'):
+    def __init__(self, metric='euclidean', graph_type='symmetric', clustering_iterations=5):
          self.best_modularity =-1
          self.best_network = nx.Graph()
          self.best_part =[]
          self.k_best =2
          self.metric=metric
          self.graph_type = graph_type
+         self.clustering_iterations = clustering_iterations
          
     def fit_predict(self, X):
     
@@ -29,12 +30,11 @@ class kNN_network(BaseEstimator, ClusterMixin):
             elif self.graph_type=='assymetric':
                 kNN = kNN.maximum(kNN.T)
             network = nx.from_scipy_sparse_matrix(kNN)
-            clstr = Louvain()
-            curr_part = clstr.fit(kNN).labels_
+            curr_part, avg_modularity = self._get_partition_and_modularity(kNN)
             random_kNN = nx.to_scipy_sparse_matrix(self._randomize_network(network, self.graph_type))
-            curr_random_part = clstr.fit(random_kNN).labels_
-            curr_modularity = modularity(kNN, curr_part) - modularity(random_kNN, curr_random_part)
-            #curr_modularity = modularity(kNN, curr_part) - self._random_modularity(network)
+            curr_random_part, avg_random_modularity = self._get_partition_and_modularity(random_kNN)
+            curr_modularity = avg_modularity - avg_random_modularity
+            #curr_modularity = avg_modualrity - self._random_modularity(network)
             if curr_modularity > self.best_modularity:
                 self.best_modularity = curr_modularity
                 self.best_network = network
@@ -55,6 +55,14 @@ class kNN_network(BaseEstimator, ClusterMixin):
         S = network.number_of_nodes()
         p = nx.density(network)
         return (1-2/np.sqrt(S))*(2/(p*S))**(2/3)
+    
+    def _get_partition_and_modularity(self, kNN):
+        cluster_iterations = [Louvain()]*self.clustering_iterations
+        parts = [clstr.fit(kNN).labels_ for clstr in cluster_iterations]
+        modularities = [modularity(kNN, part) for part in parts]
+        best_part = parts[np.argmax(modularities)]
+        avg_modularity = np.mean(modularities)
+        return best_part, avg_modularity
         
         
         

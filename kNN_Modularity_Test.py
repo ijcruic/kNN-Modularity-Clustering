@@ -18,12 +18,12 @@ subGroupsDF = pd.DataFrame({'Nodes':y})
 subGroupsDF.replace(to_replace={0:'Setosa', 1:'Versicolour',
                           2:'Virginica'}, inplace=True)
 
-kNN = kNN_Modularity.kNN_network(metric='euclidean', graph_type='symmetric')
+kNN = kNN_Modularity.kNN_network(metric='euclidean', graph_type='assymmetric', clustering_alg='louvain')
 subgroups = kNN.fit_predict(X)
 latent_network = kNN.best_network
 
 
-print("The Adjusted Mutyal Information of k-NN Modularity Maximization on cluster label is: {}".format(adjusted_mutual_info_score(y, subgroups)))
+print("The Adjusted Mutual Information of k-NN Modularity Maximization on cluster label is: {}".format(adjusted_mutual_info_score(y, subgroups)))
 
 labels = subGroupsDF['Nodes']
 nx.draw(latent_network, node_color=subgroups, cmap=plt.cm.Set1, labels=labels)

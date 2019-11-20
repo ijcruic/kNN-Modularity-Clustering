@@ -70,7 +70,7 @@ class kNN_network(BaseEstimator, ClusterMixin):
         return (1-2/np.sqrt(S))*(2/(p*S))**(2/3)
     
     def _get_louvain_partition_and_modularity(self, kNN):
-        cluster_iterations = [Louvain()]*self.clustering_iterations
+        cluster_iterations = [Louvain(random_state=int(rand_state), shuffle_nodes=True) for rand_state in np.random.randint(1,high=100000,size=self.clustering_iterations)]
         parts = [clstr.fit(kNN).labels_ for clstr in cluster_iterations]
         modularities = [modularity(kNN, part) for part in parts]
         best_part = parts[np.argmax(modularities)]

@@ -10,17 +10,55 @@ import numpy as np, networkx as nx
 from sknetwork.clustering import Louvain, modularity
 
 class kNN_network(BaseEstimator, ClusterMixin):
+    """
+    k-NN Modularity method for finidng clusters and best fit latent graph
+
+    ...
+
+    Attributes
+    ----------
+    best_modualrity : float
+        The best modularity found by the method
+    best_network : Networkx Graph
+        Latent Graph of the data at the best modularity
+    best_part: list of int
+        list of the cluster labels of the objects being clustered
+    k_best: int
+        number of nearest neighbors used for creating the best graph
+
+    Methods
+    -------
+    fit_predict(X)
+        Find the best graph and cluster labels for the data X. X should be 
+        numpy array like of (num_of_objects, num_of_features)
+    """
 
     def __init__(self, metric='euclidean', graph_type='symmetric', 
                  clustering_alg='louvain', clustering_iterations=5):
-         self.best_modularity =-1
-         self.best_network = nx.Graph()
-         self.best_part =[]
-         self.k_best =2
-         self.metric=metric
-         self.graph_type = graph_type
-         self.clustering_alg = clustering_alg
-         self.clustering_iterations = clustering_iterations
+        """
+        Parameters
+        ----------
+        metric : str, default='euclidean'
+            The name of the metric used to construct the kNN graphs. Any metric
+            from sklearn.neighbors.DistanceMetric can be used
+        graph_type : str, default='symmetric'
+            Wether to create a 'symmetric' or 'assymetric' kNN
+        clustering_alg : str, default='louvain'
+            Modularity-based graph clustering algorithm to use in the latent
+            graph clustering. Options are 'louvain' or 'leiden'
+        clustering_iterations : int, default=5
+            Number of times to run the modularity-based graph clustering
+            algorithm for each graph
+        """
+        
+        self.best_modularity =-1
+        self.best_network = nx.Graph()
+        self.best_part =[]
+        self.k_best =2
+        self.metric=metric
+        self.graph_type = graph_type
+        self.clustering_alg = clustering_alg
+        self.clustering_iterations = clustering_iterations
          
     def fit_predict(self, X):
     
@@ -95,13 +133,17 @@ class kNN_network(BaseEstimator, ClusterMixin):
     
     def _scipy_to_igraph(self, matrix):
         from igraph import Graph
-        if self.graph_type =='directed':
-            directed=True
-        else:
-            directed = False
+        from sklearn.utils.validation import check_symmetric
         sources, targets = matrix.nonzero()
         weights = matrix[sources, targets]
-        return Graph(list(zip(sources, targets)), directed=directed, edge_attrs={'weight': weights})
+        graph = Graph(n=matrix.shape[0], edges=list(zip(sources, targets)), directed=True, edge_attrs={'weight': weights})
         
+        try:
+            check_symmetric(matrix, raise_exception=True)
+            graph = graph.as_undirected()
+        except ValueError:
+            pass
+        
+        return graph
         
         
